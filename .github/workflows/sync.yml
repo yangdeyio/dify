@@ -1,31 +1,36 @@
-name: Sync Fork
+name: Upstream Sync
+
+permissions:
+  contents: write
+  issues: write
+  actions: write
 
 on:
   schedule:
-    - cron: '0 0 * * *' # 每天同步一次
-  workflow_dispatch: # 手动触发
+    - cron: '0 */6 * * *' # every 6 hours
+  workflow_dispatch:
 
 jobs:
-  sync:
+  sync_latest_from_upstream:
+    name: Sync latest commits from upstream repo
     runs-on: ubuntu-latest
+    if: ${{ github.event.repository.fork }}
+
     steps:
-      - name: Checkout the repo
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      - name: Clean issue notice
+        uses: actions-cool/issues-helper@v3
         with:
-          persist-credentials: false # 禁止使用默认的GitHub Token
-          fetch-depth: 0 # 完整克隆所有历史记录
+          actions: 'close-issues'
+          labels: '🚨 Sync Fail'
 
-      - name: Configure the upstream repo
-        run: git remote add upstream https://github.com/langgenius/dify.git
-
-      - name: Fetch all branches from the upstream repo
-        run: git fetch upstream
-
-      - name: Sync with the upstream repo
-        run: git merge upstream/main
-
-      - name: Push changes to the forked repo
-        run: |
-          git push origin HEAD:main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Sync upstream changes
+        id: sync
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
+        with:
+          upstream_sync_repo: langgenius/dify
+          upstream_sync_branch: main
+          target_sync_branch: main
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }} # automatically generated, no need to set
+          test_mode: false
