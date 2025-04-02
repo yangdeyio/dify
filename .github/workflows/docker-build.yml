@@ -3,7 +3,7 @@ name: Build docker image
 on:
   pull_request:
     branches:
-      - "main"
+      - "deploy"
     paths:
       - api/Dockerfile
       - web/Dockerfile
