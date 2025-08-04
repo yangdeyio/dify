@@ -92,9 +92,9 @@ class TencentVector(BaseVector):
 
     def _create_collection(self, dimension: int) -> None:
         self._dimension = dimension
-        lock_name = "vector_indexing_lock_{}".format(self._collection_name)
+        lock_name = f"vector_indexing_lock_{self._collection_name}"
         with redis_client.lock(lock_name, timeout=20):
-            collection_exist_cache_key = "vector_indexing_{}".format(self._collection_name)
+            collection_exist_cache_key = f"vector_indexing_{self._collection_name}"
             if redis_client.get(collection_exist_cache_key):
                 return
 
@@ -284,7 +284,8 @@ class TencentVector(BaseVector):
                 # Compatible with version 1.1.3 and below.
                 meta = json.loads(meta)
                 score = 1 - result.get("score", 0.0)
-            score = result.get("score", 0.0)
+            else:
+                score = result.get("score", 0.0)
             if score > score_threshold:
                 meta["score"] = score
                 doc = Document(page_content=result.get(self.field_text), metadata=meta)
